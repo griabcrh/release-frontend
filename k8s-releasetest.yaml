@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-test
+  namespace: $NAMESPACE
+  labels:
+    app: release-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: release-test
+  template:
+    metadata:
+      name: release-test
+      labels:
+        app: release-test
+    spec:
+      containers:
+        - name: release-test
+          image: $REGISTRY/$PROJECT/$IMAGENAME:$TAGS
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 30001
+              protocol: TCP
+          resources:
+            requests:
+              memory: "0.5G"
+              cpu: "0.2"
+            limits:
+              memory: "1G"
+              cpu: "0.5"
+      imagePullSecrets:
+        - name: harbor-k8s-secret
+      restartPolicy: Always
+      
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-test
+  namespace: $NAMESPACE
+spec:
+  type: NodePort
+  ports:
+    - port: 30001
+      name: release-test
+      protocol: TCP
+      targetPort: 30001
+      nodePort: 30001
+  selector:
+    app: release-test
